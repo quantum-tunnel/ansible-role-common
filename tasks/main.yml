@@ -18,7 +18,11 @@
   - net.ipv6.conf.all.forwarding
 - name: Install VPN product
   apt:
-    name: openvpn
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - openvpn
+  - iptables-persistent
 - name: Create VPN group
   group:
     name: vpnuser
@@ -28,6 +32,7 @@
     group: vpnuser
     home: /etc/openvpn
 - name: Copy secret key into /etc/openvpn
+# TODO: This should really be done with easy-rsa or similar
   copy:
     src: /vagrant/static.key
     dest: /etc/openvpn/static.key
@@ -41,3 +46,29 @@
     mode: 0600
     owner: vpnuser
     group: vpnuser
+  notify:
+  - Reconfigure systemd to start OpenVPN
+- name: Configure openvpn defaults
+  copy:
+    content: 'AUTOSTART="all"'
+    dest: /etc/default/openvpn
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+  - Reconfigure systemd to start OpenVPN
+#- name: Configure IPTables
+#  template:
+#    src: "templates/iptables/{{ item.name }}.j2"
+#    dest: "/etc/iptables/{{ item.name }}"
+#    mode: 0644
+#    owner: root
+#    group: root
+#    validate: iptables-restore -t %s
+#  with_items:
+#  - name: rules.v4
+#    check: iptables-restore
+#  - name: rules.v6
+#    check: ip6tables-restore
+#  notify:
+#  - Reload IPTables

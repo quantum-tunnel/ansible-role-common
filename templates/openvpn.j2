@@ -1,4 +1,5 @@
-dev tun
+dev quantum-tunnel-{{ remote_vpn_name|default('vpn') }}
+dev-type tun
 ifconfig {{ local_vpn_ip }} {{ remote_vpn_ip }}
-secret static.key
-{% if qbox_core_ip is defined %}remote {{ qbox_core_ip }}{% endif %}
+secret /etc/openvpn/static.key
+{% if qtun_core_ip is defined %}remote {{ qtun_core_ip }}{% endif %}

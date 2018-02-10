@@ -1,0 +1,11 @@
+---
+- name: Reconfigure systemd to start OpenVPN
+  systemd:
+    name: openvpn
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+- name: Reload IPTables
+  systemd:
+    name: netfilter-persistent
+    state: restarted

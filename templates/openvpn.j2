@@ -1,0 +1,4 @@
+dev tun
+ifconfig {{ local_vpn_ip }} {{ remote_vpn_ip }}
+secret static.key
+{% if qbox_core_ip is defined %}remote {{ qbox_core_ip }}{% endif %}

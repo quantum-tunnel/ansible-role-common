@@ -57,18 +57,18 @@
     group: root
   notify:
   - Reconfigure systemd to start OpenVPN
-#- name: Configure IPTables
-#  template:
-#    src: "templates/iptables/{{ item.name }}.j2"
-#    dest: "/etc/iptables/{{ item.name }}"
-#    mode: 0644
-#    owner: root
-#    group: root
-#    validate: iptables-restore -t %s
-#  with_items:
-#  - name: rules.v4
-#    check: iptables-restore
-#  - name: rules.v6
-#    check: ip6tables-restore
-#  notify:
-#  - Reload IPTables
+- name: Configure IPTables
+  template:
+    src: "templates/iptables/{{ item.name }}.j2"
+    dest: "/etc/iptables/{{ item.name }}"
+    mode: 0644
+    owner: root
+    group: root
+    validate: iptables-restore -t %s
+  with_items:
+  - name: rules.v4
+    check: iptables-restore
+  - name: rules.v6
+    check: ip6tables-restore
+  notify:
+  - Reload IPTables

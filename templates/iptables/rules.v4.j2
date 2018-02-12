@@ -1,21 +1,19 @@
-# Based on https://www.digitalocean.com/community/tutorials/how-to-implement-a-basic-firewall-template-with-iptables-on-ubuntu-14-04
+{# Based on https://www.digitalocean.com/community/tutorials/how-to-implement-a-basic-firewall-template-with-iptables-on-ubuntu-14-04 #}
+{# Also on https://terrywang.net/2016/02/02/new-iptables-gotchas.html #}
 *filter
 # Allow all outgoing, but drop incoming and forwarding packets by default
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
 :OUTPUT ACCEPT [0:0]
 
-# Custom per-protocol chains
+# Chains
 :UDP - [0:0]
 :TCP - [0:0]
 :ICMP - [0:0]
 
-# Acceptable UDP traffic
-
-# Acceptable TCP traffic
+# Local Services
 -A TCP -p tcp --dport 22 -j ACCEPT
-
-# Acceptable ICMP traffic
+-A ICMP -p icmp -j ACCEPT
 
 # Boilerplate acceptance policy
 -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -38,6 +36,14 @@
 -A INPUT -p tcp -j REJECT --reject-with tcp-reset
 -A INPUT -j REJECT --reject-with icmp-proto-unreachable
 
+# Now to handle forwarded traffic
+{% for destination in destinations|default({}) %}
+{% for source in sources|default({}) %}
+{% for port in destination.ports|default({}) %}
+-A FORWARD --source {% if role == 'local' %}{{ source.from }}{% else %}{{ source.to }}{% endif %} --destination {% if role == 'local' %}{{ destination.as }}{% else %}{{ destination.to }}{% endif %} --protocol {{ port.protocol }} --destination-port {{ port.number }} -j ACCEPT
+{% endfor %}{# port #}
+{% endfor %}{# source #}
+{% endfor %}{# destination #}
 # Commit the changes
 COMMIT
 
@@ -51,6 +57,21 @@ COMMIT
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
+
+{# Inbound Rules #}
+{# TODO: Work out return path :) #}
+
+{# Outbound Rules #}
+{% if role == 'local' and sources is defined %}
+{% for source in sources %}
+-A POSTROUTING --source {{ source.from }} --destination 198.17.0.0/16 -p all -j SNAT --to-source {{ source.to }}
+{% endfor %}
+{% elif role == 'remote' and destinations is defined %}
+{% for destination in destinations %}
+-A PREROUTING --destination {{ destination.as }} -p all -j DNAT --to-destination {{destination.to }}
+{% endfor %}
+-A POSTROUTING --source 198.16.0.0/16 -j MASQUERADE
+{% endif %}
 COMMIT
 
 *security

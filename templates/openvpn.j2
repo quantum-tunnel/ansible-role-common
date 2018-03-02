@@ -1,5 +1,6 @@
-dev quantum-tunnel-{{ remote_vpn_name|default('vpn') }}
+dev tun0
 dev-type tun
 ifconfig {{ local_vpn_ip }} {{ remote_vpn_ip }}
 secret /etc/openvpn/static.key
+route {{ remote_vpn_subnet | ipaddr('network') }} {{ remote_vpn_subnet | ipaddr('netmask') }}
 {% if qtun_core_ip is defined %}remote {{ qtun_core_ip }}{% endif %}
